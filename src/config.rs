@@ -28,26 +28,22 @@ pub struct Config {
     pub save: bool,
 
     /// Restore saved brightness
-    #[arg(short = 'I', long, conflicts_with_all = ["get", "set", "add", "sub", "save", "list_controllers", "monitor_workflow"])]
+    #[arg(short = 'I', long, conflicts_with_all = ["get", "set", "add", "sub", "save", "list_controllers"])]
     pub restore: bool,
 
     /// List all controllers
-    #[arg(short = 'L', long, conflicts_with_all = ["get", "set", "add", "sub", "save", "restore", "monitor_workflow"])]
+    #[arg(short = 'L', long, conflicts_with_all = ["get", "set", "add", "sub", "save", "restore"])]
     pub list_controllers: bool,
 
-    /// Monitor workflow: save, dim to 5%, then restore
-    #[arg(long = "monitor-workflow", conflicts_with_all = ["get", "set", "add", "sub", "save", "restore", "list_controllers"])]
-    pub monitor_workflow: bool,
+    /// Test workflow: save all, dim to 5%, restore all
+    #[arg(long = "test", conflicts_with_all = ["get", "set", "add", "sub", "save", "restore", "list_controllers"])]
+    pub test: bool,
 
     /// Target device type
     #[arg(short, long, value_enum)]
     pub target: Option<Target>,
 
-    /// Controller selection mode
-    #[arg(long, value_enum, default_value = "auto")]
-    pub controller_mode: ControllerMode,
-
-    /// Specific controller name
+    /// Specific controller name (auto-detect if not specified)
     #[arg(short, long)]
     pub controller: Option<String>,
 
@@ -65,14 +61,6 @@ pub enum Target {
     Keyboard,
     /// External monitors (DDC/CI)
     Monitor,
-}
-
-#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
-pub enum ControllerMode {
-    /// Auto-detect all controllers
-    Auto,
-    /// Use specified controller
-    Specify,
 }
 
 /// Brightness value that can be either raw or percentage
@@ -155,14 +143,14 @@ pub enum Operation {
     Save,
     Restore,
     List,
-    MonitorWorkflow,
+    Test,
 }
 
 impl Config {
     /// Get the effective operation from flags
     pub fn operation(&self) -> Operation {
-        if self.monitor_workflow {
-            Operation::MonitorWorkflow
+        if self.test {
+            Operation::Test
         } else if self.list_controllers {
             Operation::List
         } else if self.restore {

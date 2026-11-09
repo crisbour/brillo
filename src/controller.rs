@@ -1,4 +1,4 @@
-use crate::config::{Config, Target, ControllerMode, BrightnessValue};
+use crate::config::{Config, Target, BrightnessValue};
 use crate::ddcutil;
 use crate::error::{BrilloError, Result};
 use log::{debug, info};
@@ -14,15 +14,15 @@ pub struct Controller {
 }
 
 impl Controller {
-    /// Detect and select the best controller based on config
+    /// Detect and select the best controller
+    /// If controller name is specified, use it; otherwise auto-detect
     pub fn detect(config: &Config) -> Result<Self> {
-        match config.controller_mode {
-            ControllerMode::Auto => Self::auto_detect(config),
-            ControllerMode::Specify => {
-                let name = config.controller.clone()
-                    .ok_or_else(|| BrilloError::ControllerNotFound("No controller specified".into()))?;
-                Self::from_name(&name, config.target.unwrap_or(Target::Backlight))
-            }
+        if let Some(name) = &config.controller {
+            // Use specified controller
+            Self::from_name(name, config.target.unwrap_or(Target::Backlight))
+        } else {
+            // Auto-detect best controller
+            Self::auto_detect(config)
         }
     }
 

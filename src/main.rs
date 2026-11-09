@@ -110,24 +110,24 @@ async fn main() -> Result<()> {
         Operation::Sub => controller.adjust_brightness(&config, false),
         Operation::Save => controller.save_brightness(&config),
         Operation::Restore => controller.restore_brightness(&config),
-        Operation::MonitorWorkflow => execute_monitor_workflow(&config),
+        Operation::Test => execute_test_workflow(&config),
         Operation::List => Ok(()), // Already handled above
     }
     .map_err(|e| anyhow::anyhow!(e))
 }
 
-/// Execute the 3-step monitor workflow:
+/// Execute test workflow:
 /// 1. Save current brightness for all monitors
 /// 2. Dim all monitors to 5%
 /// 3. Restore each monitor to its saved value
-fn execute_monitor_workflow(config: &Config) -> crate::error::Result<()> {
+fn execute_test_workflow(config: &Config) -> crate::error::Result<()> {
     if config.target != Some(config::Target::Monitor) {
         return Err(crate::error::BrilloError::ConfigError(
-            "Monitor workflow requires --target monitor".into()
+            "Test workflow requires --target monitor".into()
         ));
     }
 
-    info!("=== Monitor Brightness Workflow ===");
+    info!("=== Test Workflow ===");
 
     // Step 1: Save current brightness for all monitors
     info!("Step 1: Saving current brightness for all monitors...");
@@ -141,6 +141,6 @@ fn execute_monitor_workflow(config: &Config) -> crate::error::Result<()> {
     info!("Step 3: Restoring saved brightness values...");
     controller::restore_all_monitors(config)?;
 
-    info!("=== Workflow Complete ===");
+    info!("=== Test Complete ===");
     Ok(())
 }

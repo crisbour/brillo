@@ -48,6 +48,31 @@ cargo build --release
 
 ## Usage
 
+### Nix
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    brillo.url = "git+file:///path/to/brillo";
+  };
+
+  outputs = { self, nixpkgs, brillo }:
+    let
+      system = "x86_64-linux";
+      pkgs = import nixpkgs { inherit system; };
+    in
+    {
+      devShells.${system}.default = pkgs.mkShell {
+        packages = [
+          brillo.packages.${system}.default
+          # Other packages...
+        ];
+      };
+    };
+}
+```
+
 ### Overview 
 
 #### 1. Save/Restore Behavior

@@ -55,10 +55,6 @@ pub struct Config {
     /// Use "50%" for percentage or "50" for raw value
     #[arg(short, long)]
     pub value: Option<BrightnessValue>,
-
-    /// Verbosity level (0-8)
-    #[arg(long, default_value = "0")]
-    pub verbose: u8,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
@@ -73,10 +69,8 @@ pub enum Target {
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
 pub enum ControllerMode {
-    /// Auto-detect best controller
+    /// Auto-detect all controllers
     Auto,
-    /// Apply to all controllers
-    All,
     /// Use specified controller
     Specify,
 }
@@ -95,27 +89,27 @@ impl FromStr for BrightnessValue {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
-        
+
         if s.ends_with('%') {
             // Percentage format: "50%"
             let num_str = s.trim_end_matches('%').trim();
             let value = num_str.parse::<i64>()
                 .map_err(|e| format!("Invalid percentage value '{}': {}", s, e))?;
-            
+
             if value < 0 || value > 100 {
                 return Err(format!("Percentage must be between 0 and 100, got {}", value));
             }
-            
+
             Ok(BrightnessValue::Percent(value))
         } else {
             // Raw format: "50"
             let value = s.parse::<i64>()
                 .map_err(|e| format!("Invalid raw value '{}': {}", s, e))?;
-            
+
             if value < 0 {
                 return Err(format!("Raw value must be non-negative, got {}", value));
             }
-            
+
             Ok(BrightnessValue::Raw(value))
         }
     }
@@ -129,7 +123,7 @@ impl BrightnessValue {
             BrightnessValue::Percent(v) => (*v as f64 / 100.0 * max as f64) as i64,
         }
     }
-    
+
     /// Get the value as percentage (0-100)
     pub fn to_percent(&self, max: i64) -> f64 {
         match self {
@@ -137,7 +131,7 @@ impl BrightnessValue {
             BrightnessValue::Percent(v) => *v as f64,
         }
     }
-    
+
     /// Get the underlying i64 value
     pub fn value(&self) -> i64 {
         match self {
@@ -145,7 +139,7 @@ impl BrightnessValue {
             BrightnessValue::Percent(v) => *v,
         }
     }
-    
+
     /// Check if this is a percentage value
     pub fn is_percent(&self) -> bool {
         matches!(self, BrightnessValue::Percent(_))

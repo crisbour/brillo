@@ -18,11 +18,6 @@ impl Controller {
     pub fn detect(config: &Config) -> Result<Self> {
         match config.controller_mode {
             ControllerMode::Auto => Self::auto_detect(config),
-            ControllerMode::All => {
-                // For "all" mode, return first controller
-                // Actual iteration happens in operation execution
-                Self::auto_detect(config)
-            }
             ControllerMode::Specify => {
                 let name = config.controller.clone()
                     .ok_or_else(|| BrilloError::ControllerNotFound("No controller specified".into()))?;
@@ -162,7 +157,7 @@ impl Controller {
 
         let adjustment_value = config.value
             .ok_or_else(|| BrilloError::ConfigError("No value specified".into()))?;
-        
+
         // Convert adjustment to raw value
         let adjustment = adjustment_value.to_raw(self.max_brightness);
 

@@ -1,0 +1,14 @@
+[package]
+name = "brillo"
+version = "2.0.0"
+edition = "2021"
+description = "Control brightness of backlight, keyboard LEDs, and external monitors"
+license = "GPL-3.0-only"
+
+[dependencies]
+anyhow = "1.0"
+thiserror = "1.0"
+clap = { version = "4.4", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+log = "0.4"
+env_logger = "0.11"

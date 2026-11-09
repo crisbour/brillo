@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
             .map_err(|e| anyhow::anyhow!(e));
     }
 
-    // Save/Restore operations: when no target specified, save ALL devices (monitors + backlight)
+    // Save/Restore operations: when no target specified, save ALL devices (monitors + backlight + keyboard)
     if matches!(config.operation(), Operation::Save | Operation::Restore) && config.target.is_none() {
         // Save all monitors first
         if ddcutil::is_available() {
@@ -38,23 +38,44 @@ async fn main() -> Result<()> {
                 }
             }
         }
-
-        // Also save backlight (laptop display)
+        
+        // Save backlight (laptop display)
         let backlight_config = {
             let mut cfg = config.clone();
             cfg.target = Some(config::Target::Backlight);
             cfg
         };
-
-        let controller = controller::Controller::detect(&backlight_config)
-            .map_err(|e| anyhow::anyhow!(e))?;
-
-        let result = match config.operation() {
-            Operation::Save => controller.save_brightness(&backlight_config),
-            Operation::Restore => controller.restore_brightness(&backlight_config),
-            _ => Ok(()),
+        
+        if let Ok(controller) = controller::Controller::detect(&backlight_config) {
+            let result = match config.operation() {
+                Operation::Save => controller.save_brightness(&backlight_config),
+                Operation::Restore => controller.restore_brightness(&backlight_config),
+                _ => Ok(()),
+            };
+            if let Err(e) = result {
+                log::debug!("Failed to save/restore backlight: {}", e);
+            }
+        }
+        
+        // Save keyboard backlight
+        let keyboard_config = {
+            let mut cfg = config.clone();
+            cfg.target = Some(config::Target::Keyboard);
+            cfg
         };
-        return result.map_err(|e| anyhow::anyhow!(e));
+        
+        if let Ok(controller) = controller::Controller::detect(&keyboard_config) {
+            let result = match config.operation() {
+                Operation::Save => controller.save_brightness(&keyboard_config),
+                Operation::Restore => controller.restore_brightness(&keyboard_config),
+                _ => Ok(()),
+            };
+            if let Err(e) = result {
+                log::debug!("Failed to save/restore keyboard: {}", e);
+            }
+        }
+        
+        return Ok(());
     }
 
     // For explicit target (monitor, keyboard, backlight), use target-specific logic

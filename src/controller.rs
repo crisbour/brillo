@@ -1,4 +1,4 @@
-use crate::config::{Config, Target, ControllerMode, ValueMode};
+use crate::config::{Config, Target, ControllerMode, BrightnessValue};
 use crate::ddcutil;
 use crate::error::{BrilloError, Result};
 use log::{debug, info};
@@ -121,32 +121,19 @@ impl Controller {
                 .map_err(|e| BrilloError::SysfsError(format!("Parsing brightness: {}", e)))?
         };
 
-        let display_value = match config.value_mode {
-            ValueMode::Raw => raw_value,
-            ValueMode::Percent | ValueMode::PercentExponential => {
-                (raw_value as f64 / self.max_brightness as f64 * 100.0) as i64
-            }
-        };
-
-        match config.value_mode {
-            ValueMode::Raw => println!("{}", display_value),
-            _ => println!("{:.2}", display_value as f64 / 100.0),
-        }
+        // Display value is always shown as percentage for user-friendliness
+        let percent = (raw_value as f64 / self.max_brightness as f64 * 100.0) as i64;
+        println!("{:.2}", percent as f64 / 100.0);
 
         Ok(())
     }
 
     /// Set brightness to specific value
     pub fn set_brightness(&self, config: &Config) -> Result<()> {
-        let value = config.value
+        let brightness_value = config.value
             .ok_or_else(|| BrilloError::ConfigError("No value specified".into()))?;
 
-        let raw_value = match config.value_mode {
-            ValueMode::Raw => value,
-            ValueMode::Percent | ValueMode::PercentExponential => {
-                (value as f64 / 100.0 * self.max_brightness as f64) as i64
-            }
-        };
+        let raw_value = brightness_value.to_raw(self.max_brightness);
 
         let clamped = raw_value.clamp(0, self.max_brightness);
 
@@ -173,8 +160,11 @@ impl Controller {
                 .map_err(|e| BrilloError::SysfsError(format!("Parsing brightness: {}", e)))?
         };
 
-        let adjustment = config.value
+        let adjustment_value = config.value
             .ok_or_else(|| BrilloError::ConfigError("No value specified".into()))?;
+        
+        // Convert adjustment to raw value
+        let adjustment = adjustment_value.to_raw(self.max_brightness);
 
         let new_value = if add {
             current + adjustment
@@ -183,8 +173,7 @@ impl Controller {
         };
 
         let mut new_config = config.clone();
-        new_config.value = Some(new_value);
-        new_config.value_mode = ValueMode::Raw;
+        new_config.value = Some(BrightnessValue::Raw(new_value));
         new_config.set = true;
 
         self.set_brightness(&new_config)
@@ -225,13 +214,11 @@ impl Controller {
             .map_err(|e| BrilloError::ConfigError(format!("Parsing saved value: {}", e)))?;
 
         let mut new_config = config.clone();
-        new_config.value = Some(value);
-        new_config.value_mode = ValueMode::Raw;
+        new_config.value = Some(BrightnessValue::Raw(value));
         new_config.set = true;
 
         self.set_brightness(&new_config)?;
         info!("Restored brightness for {} to {}", self.name, value);
-        debug!("Restored brightness from {}", cache_file);
         Ok(())
     }
 }

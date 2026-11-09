@@ -1,35 +1,25 @@
 //! Brightness value conversion utilities
 
-use crate::config::ValueMode;
+use crate::config::BrightnessValue;
 
-/// Convert raw value to display value based on mode
+/// Convert raw value to display value based on brightness value type
 #[allow(dead_code)]
-pub fn to_display(raw: i64, max: i64, mode: ValueMode) -> f64 {
-    match mode {
-        ValueMode::Raw => raw as f64,
-        ValueMode::Percent => {
+pub fn to_display(raw: i64, max: i64, brightness_value: BrightnessValue) -> f64 {
+    match brightness_value {
+        BrightnessValue::Raw(_) => raw as f64,
+        BrightnessValue::Percent(_) => {
             (raw as f64 / max as f64) * 100.0
-        }
-        ValueMode::PercentExponential => {
-            // Exponential curve for more natural brightness perception
-            let normalized = raw as f64 / max as f64;
-            (normalized * normalized) * 100.0
         }
     }
 }
 
-/// Convert display value to raw value based on mode
+/// Convert display value to raw value based on brightness value type
 #[allow(dead_code)]
-pub fn from_display(display: f64, max: i64, mode: ValueMode) -> i64 {
-    match mode {
-        ValueMode::Raw => display as i64,
-        ValueMode::Percent => {
+pub fn from_display(display: f64, max: i64, brightness_value: BrightnessValue) -> i64 {
+    match brightness_value {
+        BrightnessValue::Raw(_) => display as i64,
+        BrightnessValue::Percent(_) => {
             ((display / 100.0) * max as f64) as i64
-        }
-        ValueMode::PercentExponential => {
-            // Inverse of exponential curve
-            let normalized = (display / 100.0).sqrt();
-            (normalized * max as f64) as i64
         }
     }
 }
@@ -47,8 +37,8 @@ mod tests {
     #[test]
     fn test_percent_conversion() {
         let max = 1000;
-        assert_eq!(to_display(500, max, ValueMode::Percent) as i64, 50);
-        assert_eq!(from_display(50.0, max, ValueMode::Percent), 500);
+        assert_eq!(to_display(500, max, BrightnessValue::Percent(50)) as i64, 50);
+        assert_eq!(from_display(50.0, max, BrightnessValue::Percent(50)), 500);
     }
 
     #[test]

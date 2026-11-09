@@ -1,4 +1,5 @@
 use clap::{Parser, ValueEnum};
+use std::str::FromStr;
 
 #[derive(Parser, Debug, Clone)]
 #[command(name = "brillo")]
@@ -42,10 +43,6 @@ pub struct Config {
     #[arg(short, long, value_enum)]
     pub target: Option<Target>,
 
-    /// Field to operate on
-    #[arg(short, long, value_enum, default_value = "brightness")]
-    pub field: Field,
-
     /// Controller selection mode
     #[arg(long, value_enum, default_value = "auto")]
     pub controller_mode: ControllerMode,
@@ -54,17 +51,10 @@ pub struct Config {
     #[arg(short, long)]
     pub controller: Option<String>,
 
-    /// Value mode (raw, percent, exponential)
-    #[arg(long, value_enum, default_value = "percent")]
-    pub value_mode: ValueMode,
-
     /// Brightness value (for set/add/sub operations)
+    /// Use "50%" for percentage or "50" for raw value
     #[arg(short, long)]
-    pub value: Option<i64>,
-
-    /// Transition time in microseconds
-    #[arg(short, long, default_value = "0")]
-    pub usec: i64,
+    pub value: Option<BrightnessValue>,
 
     /// Verbosity level (0-8)
     #[arg(long, default_value = "0")]
@@ -82,16 +72,6 @@ pub enum Target {
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
-pub enum Field {
-    /// Brightness value
-    Brightness,
-    /// Maximum brightness
-    Max,
-    /// Minimum capability
-    MinCap,
-}
-
-#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
 pub enum ControllerMode {
     /// Auto-detect best controller
     Auto,
@@ -101,14 +81,75 @@ pub enum ControllerMode {
     Specify,
 }
 
-#[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
-pub enum ValueMode {
-    /// Raw sysfs values
-    Raw,
+/// Brightness value that can be either raw or percentage
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum BrightnessValue {
+    /// Raw sysfs value
+    Raw(i64),
     /// Percentage (0-100)
-    Percent,
-    /// Exponential percentage
-    PercentExponential,
+    Percent(i64),
+}
+
+impl FromStr for BrightnessValue {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.trim();
+        
+        if s.ends_with('%') {
+            // Percentage format: "50%"
+            let num_str = s.trim_end_matches('%').trim();
+            let value = num_str.parse::<i64>()
+                .map_err(|e| format!("Invalid percentage value '{}': {}", s, e))?;
+            
+            if value < 0 || value > 100 {
+                return Err(format!("Percentage must be between 0 and 100, got {}", value));
+            }
+            
+            Ok(BrightnessValue::Percent(value))
+        } else {
+            // Raw format: "50"
+            let value = s.parse::<i64>()
+                .map_err(|e| format!("Invalid raw value '{}': {}", s, e))?;
+            
+            if value < 0 {
+                return Err(format!("Raw value must be non-negative, got {}", value));
+            }
+            
+            Ok(BrightnessValue::Raw(value))
+        }
+    }
+}
+
+impl BrightnessValue {
+    /// Get the raw value, converting from percentage if needed
+    pub fn to_raw(&self, max: i64) -> i64 {
+        match self {
+            BrightnessValue::Raw(v) => *v,
+            BrightnessValue::Percent(v) => (*v as f64 / 100.0 * max as f64) as i64,
+        }
+    }
+    
+    /// Get the value as percentage (0-100)
+    pub fn to_percent(&self, max: i64) -> f64 {
+        match self {
+            BrightnessValue::Raw(v) => (*v as f64 / max as f64) * 100.0,
+            BrightnessValue::Percent(v) => *v as f64,
+        }
+    }
+    
+    /// Get the underlying i64 value
+    pub fn value(&self) -> i64 {
+        match self {
+            BrightnessValue::Raw(v) => *v,
+            BrightnessValue::Percent(v) => *v,
+        }
+    }
+    
+    /// Check if this is a percentage value
+    pub fn is_percent(&self) -> bool {
+        matches!(self, BrightnessValue::Percent(_))
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

@@ -125,7 +125,7 @@ impl Controller {
 
     /// Set brightness to specific value
     pub fn set_brightness(&self, config: &Config) -> Result<()> {
-        let brightness_value = config.value
+        let brightness_value = config.set
             .ok_or_else(|| BrilloError::ConfigError("No value specified".into()))?;
 
         let raw_value = brightness_value.to_raw(self.max_brightness);
@@ -155,8 +155,12 @@ impl Controller {
                 .map_err(|e| BrilloError::SysfsError(format!("Parsing brightness: {}", e)))?
         };
 
-        let adjustment_value = config.value
-            .ok_or_else(|| BrilloError::ConfigError("No value specified".into()))?;
+        // Get adjustment value from config.add or config.sub
+        let adjustment_value = if add {
+            config.add
+        } else {
+            config.sub
+        }.ok_or_else(|| BrilloError::ConfigError("No value specified".into()))?;
 
         // Convert adjustment to raw value
         let adjustment = adjustment_value.to_raw(self.max_brightness);
@@ -167,9 +171,11 @@ impl Controller {
             current - adjustment
         };
 
+        // Create new config with the calculated value
         let mut new_config = config.clone();
-        new_config.value = Some(BrightnessValue::Raw(new_value));
-        new_config.set = true;
+        new_config.set = Some(BrightnessValue::Raw(new_value));
+        new_config.add = None;
+        new_config.sub = None;
 
         self.set_brightness(&new_config)
     }
@@ -209,8 +215,7 @@ impl Controller {
             .map_err(|e| BrilloError::ConfigError(format!("Parsing saved value: {}", e)))?;
 
         let mut new_config = config.clone();
-        new_config.value = Some(BrightnessValue::Raw(value));
-        new_config.set = true;
+        new_config.set = Some(BrightnessValue::Raw(value));
 
         self.set_brightness(&new_config)?;
         info!("Restored brightness for {} to {}", self.name, value);

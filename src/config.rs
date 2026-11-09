@@ -11,17 +11,17 @@ pub struct Config {
     #[arg(short = 'G', long, conflicts_with_all = ["set", "add", "sub", "save", "restore", "list_controllers"])]
     pub get: bool,
 
-    /// Set brightness (requires -v)
-    #[arg(short = 'S', long, conflicts_with_all = ["get", "add", "sub", "save", "restore", "list_controllers"])]
-    pub set: bool,
+    /// Set brightness to VALUE (e.g., "50%" or "5000")
+    #[arg(short = 'S', long, value_name = "VALUE", conflicts_with_all = ["get", "add", "sub", "save", "restore", "list_controllers", "test"])]
+    pub set: Option<BrightnessValue>,
 
-    /// Add to brightness (requires -v)
-    #[arg(short = 'A', long, conflicts_with_all = ["get", "set", "sub", "save", "restore", "list_controllers"])]
-    pub add: bool,
+    /// Add VALUE to brightness (e.g., "10%" or "1000")
+    #[arg(short = 'A', long, value_name = "VALUE", conflicts_with_all = ["get", "set", "sub", "save", "restore", "list_controllers", "test"])]
+    pub add: Option<BrightnessValue>,
 
-    /// Subtract from brightness (requires -v)
-    #[arg(short = 'U', long, conflicts_with_all = ["get", "set", "add", "save", "restore", "list_controllers"])]
-    pub sub: bool,
+    /// Subtract VALUE from brightness (e.g., "10%" or "1000")
+    #[arg(short = 'U', long, value_name = "VALUE", conflicts_with_all = ["get", "set", "add", "save", "restore", "list_controllers", "test"])]
+    pub sub: Option<BrightnessValue>,
 
     /// Save current brightness
     #[arg(short = 'O', long, conflicts_with_all = ["get", "set", "add", "sub", "restore", "list_controllers"])]
@@ -46,11 +46,6 @@ pub struct Config {
     /// Specific controller name (auto-detect if not specified)
     #[arg(short, long)]
     pub controller: Option<String>,
-
-    /// Brightness value (for set/add/sub operations)
-    /// Use "50%" for percentage or "50" for raw value
-    #[arg(short, long)]
-    pub value: Option<BrightnessValue>,
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum, PartialEq)]
@@ -157,11 +152,11 @@ impl Config {
             Operation::Restore
         } else if self.save {
             Operation::Save
-        } else if self.sub {
+        } else if self.sub.is_some() {
             Operation::Sub
-        } else if self.add {
+        } else if self.add.is_some() {
             Operation::Add
-        } else if self.set {
+        } else if self.set.is_some() {
             Operation::Set
         } else {
             Operation::Get

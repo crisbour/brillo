@@ -39,7 +39,7 @@ cargo build --release
 
 ## TODO
 
-- [ ] Fixup identifyin controllers and keep a list of them
+- [ ] Fixup identifying controllers and keep a list of them
 - [ ] Fixup slow `ddcutil` calls by caching `busnum`. 
  - Example in Noctalia: https://github.com/noctalia-dev/noctalia/blob/abd21e85bc354c7d1e3d624ed064b6c729ed4846/tests/brightness_service_test.cpp#L87
  - WARN: Need to update the busnum when monitors connection changed, perhaps
@@ -82,16 +82,16 @@ cargo build --release
 brillo
 
 # Set brightness to 50% (percentage format)
-brillo -S -v 50%
+brillo -S 50%
 
 # Set brightness to raw value 5000
-brillo -S -v 5000
+brillo -S 5000
 
 # Increase brightness by 10%
-brillo -A -v 10%
+brillo -A 10%
 
 # Decrease brightness by 10%
-brillo -U -v 10%
+brillo -U 10%
 
 # List all controllers
 brillo -L
@@ -110,7 +110,7 @@ brillo -I
 brillo -L -t monitor
 
 # Set external monitor brightness to 75%
-brillo -S -v 75 -t monitor
+brillo -S 75% -t monitor
 
 # Test workflow: save → dim to 5% → restore
 brillo --test --target monitor
@@ -120,7 +120,7 @@ brillo --test --target monitor
 brillo -O --target monitor
 
 # Step 2: Dim all monitors to 5%
-brillo -S -v 5 --target monitor  # Applies to all monitors by default
+brillo -S 5% --target monitor  # Applies to all monitors by default
 
 # Step 3: Restore all monitors to saved values
 brillo -I --target monitor
@@ -131,16 +131,15 @@ brillo -I --target monitor
 | Option | Description |
 |--------|-------------|
 | `-G` | Get current brightness |
-| `-S` | Set brightness (requires `-v`) |
-| `-A` | Add to brightness (requires `-v`) |
-| `-U` | Subtract from brightness (requires `-v`) |
+| `-S` | Set brightness (e.g., `-S 50%` or `-S 5000`) |
+| `-A` | Add to brightness (e.g., `-A 10%` or `-A 1000`) |
+| `-U` | Subtract from brightness (e.g., `-U 10%` or `-U 1000`) |
 | `-O` | Save current brightness |
 | `-I` | Restore saved brightness |
 | `-L` | List all controllers |
 | `--test` | Test workflow: save → dim to 5% → restore (monitors) |
 | `--target monitor` | Target external monitors |
 | `-s` | Specify controller name (auto-detect if not set) |
-| `-v` | Brightness value (use `50%` for percentage, `50` for raw) |
 
 ## DDC/CI Monitor Support
 

@@ -14,7 +14,7 @@ use log::info;
 async fn main() -> Result<()> {
     // Initialize logger with default "info" level unless RUST_LOG is set
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-    
+
     let config = Config::parse();
 
     // Handle List operation early
@@ -38,14 +38,14 @@ async fn main() -> Result<()> {
                 }
             }
         }
-        
+
         // Save backlight (laptop display)
         let backlight_config = {
             let mut cfg = config.clone();
             cfg.target = Some(config::Target::Backlight);
             cfg
         };
-        
+
         if let Ok(controller) = controller::Controller::detect(&backlight_config) {
             let result = match config.operation() {
                 Operation::Save => controller.save_brightness(&backlight_config),
@@ -56,14 +56,14 @@ async fn main() -> Result<()> {
                 log::debug!("Failed to save/restore backlight: {}", e);
             }
         }
-        
+
         // Save keyboard backlight
         let keyboard_config = {
             let mut cfg = config.clone();
             cfg.target = Some(config::Target::Keyboard);
             cfg
         };
-        
+
         if let Ok(controller) = controller::Controller::detect(&keyboard_config) {
             let result = match config.operation() {
                 Operation::Save => controller.save_brightness(&keyboard_config),
@@ -74,7 +74,7 @@ async fn main() -> Result<()> {
                 log::debug!("Failed to save/restore keyboard: {}", e);
             }
         }
-        
+
         return Ok(());
     }
 

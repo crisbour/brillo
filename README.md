@@ -37,6 +37,15 @@ cargo build --release
 > `busnum` instead of display number would improve it. That's also the reason
 > why I removed brightness ramp.
 
+## TODO
+
+- [ ] Fixup identifyin controllers and keep a list of them
+- [ ] Fixup slow `ddcutil` calls by caching `busnum`. 
+ - Example in Noctalia: https://github.com/noctalia-dev/noctalia/blob/abd21e85bc354c7d1e3d624ed064b6c729ed4846/tests/brightness_service_test.cpp#L87
+ - WARN: Need to update the busnum when monitors connection changed, perhaps
+   each monitor should have a hash, instead of number ID. Hash={Product code,
+   binary serial number}
+
 ## Usage
 
 ### Overview 
@@ -63,9 +72,8 @@ cargo build --release
 └── dell::kbd_backlight.brightness # Keyboard backlight
 ```
 
-✅ Clean organization - no pollution of `~/.cache/`  
-✅ Per-device files - each device saved individually  
-✅ Easy cleanup - `rm -rf ~/.cache/brillo`
+- Per-device files - each device saved individually  
+- Easy cleanup - `rm -rf ~/.cache/brillo`
 
 ### Basic Operations
 
@@ -118,19 +126,6 @@ brillo -S -v 5 --target monitor  # Applies to all monitors by default
 brillo -I --target monitor
 ```
 
-### Advanced Options
-
-```bash
-# Use specific controller
-brillo -s intel_backlight -S -v 50
-
-# Save all current brightness
-brillo -O
-
-# Restore all saved brightness
-brillo -I
-```
-
 ## Command Line Options
 
 | Option | Description |
@@ -143,7 +138,6 @@ brillo -I
 | `-I` | Restore saved brightness |
 | `-L` | List all controllers |
 | `--test` | Test workflow: save → dim to 5% → restore (monitors) |
-| `-l` | Target backlight devices |
 | `--target monitor` | Target external monitors |
 | `-s` | Specify controller name (auto-detect if not set) |
 | `-v` | Brightness value (use `50%` for percentage, `50` for raw) |
